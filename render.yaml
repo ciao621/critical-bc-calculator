@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: critical-bc-calculator
+    runtime: docker
+    plan: free
+    region: singapore
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: COMPUTE_TIMEOUT_SECONDS
+        value: 120
+      - key: MAX_NODES
+        value: 80
+      - key: MAX_REQUEST_BYTES
+        value: 1048576
