@@ -1,5 +1,7 @@
 # Critical b/c Calculator
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ciao621/critical-bc-calculator)
+
 一个用于计算异质网络互惠临界条件 `Critical b/c` 的网页计算器。
 
 项目把 Julia 数学计算代码保留为核心，浏览器页面只负责输入、可视化和结果展示。用户可以输入无向加权网络的邻接矩阵、个体的 `PTE` 和决策机制参数 `MU`，然后通过后端调用 Julia 计算临界 `b/c`。
