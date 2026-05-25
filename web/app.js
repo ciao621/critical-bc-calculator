@@ -182,6 +182,9 @@ document.body.innerHTML = `
 `;
 
 const NODE_COUNT = 40;
+const LOCAL_MU_PATTERN = [0, 6, 12, 18, 24, "∞", 30, 36];
+const CORE_MU_PATTERN = [20, 28, 36, 40, 0, "∞", 12, 24];
+const BRIDGE_MU_PATTERN = [0, "∞", 8, 16, 24, 32, 40, 12, 28, 36];
 const CUSTOM_SCENARIO_ID = "custom-input";
 const customScenario = {
   id: CUSTOM_SCENARIO_ID,
@@ -209,10 +212,10 @@ function ringLatticeExample() {
   return {
     id: "local-neighborhood",
     name: "局部邻里：空间嵌入互动",
-    description: "40 个体的局部邻里网络，每个个体主要与附近位置互动。PTE 处于中低水平，MU 取较短有限值，展示有限局部适应和短期反馈主导的场景。",
+    description: "40 个体的局部邻里网络，每个个体主要与附近位置互动。PTE 保持在较低范围内，MU 同时包含阈值机制、随机试错和不同时间尺度的有限正整数，展示局部环境中的异质决策。",
     matrix,
-    PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index % 5 === 0 ? 0.35 : 0.18)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => (index % 4 === 0 ? 0 : 2))
+    PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index % 5 === 0 ? 0.28 : 0.12 + (index % 4) * 0.035)),
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => LOCAL_MU_PATTERN[index % LOCAL_MU_PATTERN.length])
   };
 }
 
@@ -238,10 +241,10 @@ function corePeripheryExample() {
   return {
     id: "core-periphery",
     name: "核心边缘：可见核心与外围学习者",
-    description: "少数核心节点高度连接，并向外围个体扩散行为。核心节点更倾向模仿既有高收益邻居，外围节点更常试错，其中部分个体采用 ∞ 表示随机试错。",
+    description: "少数核心节点高度连接，并向外围个体扩散行为。核心节点的 PTE 更低，外围个体保留更高但不超过 0.3 的试错概率；MU 覆盖 0、∞ 与较长时间尺度，展示核心和外围的决策差异。",
     matrix,
-    PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index < 8 ? 0.08 : 0.42)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => (index < 8 ? 4 : index % 6 === 0 ? "∞" : 2))
+    PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index < 8 ? 0.05 + (index % 4) * 0.02 : 0.18 + (index % 5) * 0.03)),
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => CORE_MU_PATTERN[index % CORE_MU_PATTERN.length])
   };
 }
 
@@ -265,10 +268,10 @@ function modularBridgeExample() {
   return {
     id: "modular-bridges",
     name: "社群桥接：群体边界位置",
-    description: "四个紧密社群由弱桥接边连接。多数成员依赖局部模仿，边界位置更频繁试错，并通过更长 MU 比较跨群体互动后的收益。",
+    description: "四个紧密社群由弱桥接边连接。社群内部成员保持较低 PTE，边界节点更愿意试错但仍限制在 0.3 以内；MU 同时呈现 0、∞ 和从短期到长期的有限正整数。",
     matrix,
-    PTE: Array.from({ length: NODE_COUNT }, (_, index) => ([4, 14, 24, 34].includes(index) ? 0.55 : 0.16)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => ([4, 14, 24, 34].includes(index) ? 5 : index % 10 === 0 ? 0 : 1))
+    PTE: Array.from({ length: NODE_COUNT }, (_, index) => ([4, 14, 24, 34].includes(index) ? 0.3 : 0.09 + (index % 6) * 0.025)),
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => BRIDGE_MU_PATTERN[index % BRIDGE_MU_PATTERN.length])
   };
 }
 
