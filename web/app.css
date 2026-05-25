@@ -364,6 +364,14 @@ body.is-computing .button-spinner {
   line-height: 1.45;
 }
 
+.compute-note {
+  display: block;
+  color: var(--primary-strong);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
 .mini-network {
   position: relative;
   width: 58px;

@@ -82,6 +82,7 @@ document.body.innerHTML = `
           <div>
             <strong>正在计算临界条件</strong>
             <p>正在转换邻接矩阵、迭代 IIS 概率并评估弱选择阈值。</p>
+            <p class="compute-note">免费云端实例可能需要 30-90 秒启动；输入网络较大时，请耐心等待。</p>
           </div>
         </div>
       </div>
@@ -109,6 +110,7 @@ document.body.innerHTML = `
           <div class="computing-copy">
             <strong>正在计算临界条件</strong>
             <span>正在转换邻接矩阵、求解 neutral IIS 概率，并评估弱选择阈值。</span>
+            <small class="compute-note">免费云端实例可能需要 30-90 秒启动；输入网络较大时，请耐心等待。</small>
           </div>
         </div>
 
@@ -215,7 +217,12 @@ function ringLatticeExample() {
     description: "40 个体的局部邻里网络，每个个体主要与附近位置互动。PTE 保持在较低范围内，MU 同时包含阈值机制、随机试错和不同时间尺度的有限正整数，展示局部环境中的异质决策。",
     matrix,
     PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index % 5 === 0 ? 0.28 : 0.12 + (index % 4) * 0.035)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => LOCAL_MU_PATTERN[index % LOCAL_MU_PATTERN.length])
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => LOCAL_MU_PATTERN[index % LOCAL_MU_PATTERN.length]),
+    precomputedResult: {
+      bc_star: 24.778827811416093,
+      tau_converged: true,
+      tau_err: 7.081368824657375e-11
+    }
   };
 }
 
@@ -244,7 +251,12 @@ function corePeripheryExample() {
     description: "少数核心节点高度连接，并向外围个体扩散行为。核心节点的 PTE 更低，外围个体保留更高但不超过 0.3 的试错概率；MU 覆盖 0、∞ 与较长时间尺度，展示核心和外围的决策差异。",
     matrix,
     PTE: Array.from({ length: NODE_COUNT }, (_, index) => (index < 8 ? 0.05 + (index % 4) * 0.02 : 0.18 + (index % 5) * 0.03)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => CORE_MU_PATTERN[index % CORE_MU_PATTERN.length])
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => CORE_MU_PATTERN[index % CORE_MU_PATTERN.length]),
+    precomputedResult: {
+      bc_star: 21.44048554007537,
+      tau_converged: true,
+      tau_err: 9.714062887411501e-11
+    }
   };
 }
 
@@ -271,7 +283,12 @@ function modularBridgeExample() {
     description: "四个紧密社群由弱桥接边连接。社群内部成员保持较低 PTE，边界节点更愿意试错但仍限制在 0.3 以内；MU 同时呈现 0、∞ 和从短期到长期的有限正整数。",
     matrix,
     PTE: Array.from({ length: NODE_COUNT }, (_, index) => ([4, 14, 24, 34].includes(index) ? 0.3 : 0.09 + (index % 6) * 0.025)),
-    mu: Array.from({ length: NODE_COUNT }, (_, index) => BRIDGE_MU_PATTERN[index % BRIDGE_MU_PATTERN.length])
+    mu: Array.from({ length: NODE_COUNT }, (_, index) => BRIDGE_MU_PATTERN[index % BRIDGE_MU_PATTERN.length]),
+    precomputedResult: {
+      bc_star: 19.949232474200514,
+      tau_converged: true,
+      tau_err: 4.4022896439344095e-11
+    }
   };
 }
 
@@ -520,6 +537,18 @@ function showMetrics(value) {
   fields.tauErr.textContent = formatNumber(value.tau_err);
 }
 
+function showCompletedResult(result, stateLabel, statusMessage) {
+  const cleanResult = publicResult(result);
+  showJson(cleanResult);
+  showMetrics(result);
+  fields.resultState.textContent = stateLabel;
+  setStatus(statusMessage);
+}
+
+function selectedExample() {
+  return examples.find((item) => item.id === fields.exampleSelect.value);
+}
+
 function makeSvgElement(name, attrs = {}) {
   const element = document.createElementNS("http://www.w3.org/2000/svg", name);
   Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
@@ -698,6 +727,10 @@ function updatePreview() {
 function setCustomMode() {
   fields.exampleSelect.value = CUSTOM_SCENARIO_ID;
   fields.exampleDescription.textContent = customScenario.description;
+  showJson({});
+  showMetrics({});
+  fields.resultState.textContent = "待计算";
+  setStatus("");
 }
 
 function loadExample(exampleId = fields.exampleSelect.value) {
@@ -716,10 +749,7 @@ function loadExample(exampleId = fields.exampleSelect.value) {
   fields.mu.value = selected.mu.map((value) => (value === "∞" ? "∞" : formatMu(value))).join(", ");
   fields.maxIterTau.value = "500";
   fields.convTolTau.value = "1e-10";
-  showJson({});
-  showMetrics({});
-  setStatus("");
-  fields.resultState.textContent = "待计算";
+  showCompletedResult(selected.precomputedResult, "示例结果", "该示例已显示预计算结果，无需等待云端计算。");
   updatePreview();
 }
 
@@ -749,6 +779,13 @@ document.querySelector("#showRequest").addEventListener("click", () => {
 
 document.querySelector("#compute").addEventListener("click", async () => {
   try {
+    const example = selectedExample();
+    if (example?.precomputedResult) {
+      showCompletedResult(example.precomputedResult, "示例结果", "该示例已显示预计算结果；自由输入时才会调用云端计算。");
+      updatePreview();
+      return;
+    }
+
     const payload = buildPayload();
     showJson(publicResult(payload));
     setStatus("正在计算临界条件...");
